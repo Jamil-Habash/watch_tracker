@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Log in</title>
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'style.css' %}">
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-card">
+      <h1>Log in</h1>
+      <p>Access your watch log and manage saved movies, TV, and anime.</p>
+      <form method="post" action="{% url 'login' %}">
+        {% csrf_token %}
+        {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+        <div class="auth-field">
+          <label for="id_username">Username</label>
+          <input type="text" name="username" id="id_username" required>
+        </div>
+        <div class="auth-field">
+          <label for="id_password">Password</label>
+          <input type="password" name="password" id="id_password" required>
+        </div>
+        <div class="auth-actions">
+          <button class="btn btn-primary" type="submit">Sign in</button>
+        </div>
+      </form>
+      {% if form.errors %}
+      <div class="auth-footer" style="color:#f5b2b2;">
+        Please check your username and password.
+      </div>
+      {% endif %}
+      <div class="auth-footer">
+        Don't have an account? <a href="{% url 'signup' %}">Create one</a>.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,15 +1,23 @@
 import json
 from datetime import date
 
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 
 from .models import ShowEntry
 
 
+@login_required(login_url='login')
 def index(request):
     return render(request, "index.html")
+
+
+def _json_error(message, status=403):
+    return JsonResponse({"error": message}, status=status)
 
 
 def _serialize_entry(entry):
@@ -74,34 +82,88 @@ def _build_entry_kwargs(data):
 
 @csrf_exempt
 def entries_api(request):
+    if not request.user.is_authenticated:
+        return _json_error("Authentication required", status=401)
+
     if request.method == "GET":
-        entries = ShowEntry.objects.all()
+        entries = ShowEntry.objects.filter(user=request.user)
         return JsonResponse([_serialize_entry(entry) for entry in entries], safe=False)
 
     if request.method == "POST":
         payload = json.loads(request.body.decode("utf-8")) if request.body else {}
-        entry = ShowEntry.objects.create(**_build_entry_kwargs(payload))
-        return JsonResponse(_serialize_entry(entry), status=201)
+        try:
+            entry = ShowEntry.objects.create(user=request.user, **_build_entry_kwargs(payload))
+            return JsonResponse(_serialize_entry(entry), status=201)
+        except Exception as exc:
+            return _json_error(str(exc), status=400)
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
 
 
 @csrf_exempt
 def entry_detail_api(request, pk):
-    entry = get_object_or_404(ShowEntry, pk=pk)
+    if not request.user.is_authenticated:
+        return _json_error("Authentication required", status=401)
+
+    entry = get_object_or_404(ShowEntry, pk=pk, user=request.user)
 
     if request.method == "GET":
         return JsonResponse(_serialize_entry(entry))
 
     if request.method == "PUT":
         payload = json.loads(request.body.decode("utf-8")) if request.body else {}
-        for field, value in _build_entry_kwargs(payload).items():
-            setattr(entry, field, value)
-        entry.save()
-        return JsonResponse(_serialize_entry(entry))
+        try:
+            for field, value in _build_entry_kwargs(payload).items():
+                setattr(entry, field, value)
+            entry.save()
+            return JsonResponse(_serialize_entry(entry))
+        except Exception as exc:
+            return _json_error(str(exc), status=400)
 
     if request.method == "DELETE":
         entry.delete()
         return JsonResponse({"deleted": True})
 
     return JsonResponse({"error": "Method not allowed"}, status=405)
+
+
+def signup_view(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            login(request, user)
+            return redirect(request.POST.get('next') or 'index')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'signup.html', {
+        'form': form,
+        'next': request.GET.get('next', ''),
+    })
+
+
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('index')
+
+    if request.method == 'POST':
+        form = AuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            login(request, form.get_user())
+            return redirect(request.POST.get('next') or request.GET.get('next') or 'index')
+    else:
+        form = AuthenticationForm()
+
+    return render(request, 'log_in.html', {
+        'form': form,
+        'next': request.GET.get('next', ''),
+    })
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')

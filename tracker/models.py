@@ -1,7 +1,16 @@
+from django.conf import settings
 from django.db import models
 
 
 class ShowEntry(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        blank=True,
+        on_delete=models.CASCADE,
+        related_name='entries',
+    )
+
     TYPE_CHOICES = [
         ("movie", "Movie"),
         ("tv", "TV Series"),
@@ -11,7 +20,6 @@ class ShowEntry(models.Model):
         ("completed", "Completed"),
         ("watching", "Watching"),
         ("planned", "Plan to watch"),
-        ("dropped", "Dropped"),
     ]
 
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="movie")

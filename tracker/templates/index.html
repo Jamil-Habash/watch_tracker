@@ -13,36 +13,61 @@
 </head>
 <body>
 <div class="app">
-  <header class="topbar">
-    <div class="marquee">
-      <h1>YOUR LOG</h1>
-      <p class="tagline">every movie, show, and anime — stamped as you go</p>
-    </div>
-  </header>
+  <div class="layout">
+    <aside class="sidebar">
+      <button type="button" class="sidebar-handle" aria-label="Open menu">☰</button>
+      <div class="profile-card">
+        <div class="avatar">{{ request.user.username|slice:":1"|upper }}</div>
+        <div class="profile-copy">
+          <div class="profile-name">{{ request.user.username }}</div>
+          <div class="profile-meta">{{ request.user.email|default:'Member' }}</div>
+        </div>
+      </div>
 
-  <section class="stats-strip" id="statsStrip"></section>
+      <h3>View</h3>
+      <button type="button" class="sidebar-filter-btn active" data-type="all"><span class="icon">≡</span><span class="label">All</span></button>
+      <button type="button" class="sidebar-filter-btn" data-type="movie"><span class="icon">🎬</span><span class="label">Movies</span></button>
+      <button type="button" class="sidebar-filter-btn" data-type="tv"><span class="icon">📺</span><span class="label">TV</span></button>
+      <button type="button" class="sidebar-filter-btn" data-type="anime"><span class="icon">🎌</span><span class="label">Anime</span></button>
 
-  <section class="controls">
-    <div class="type-tabs" id="typeTabs">
-      <button class="tab active" data-type="all">All</button>
-      <button class="tab" data-type="movie">Movies</button>
-      <button class="tab" data-type="tv">TV</button>
-      <button class="tab" data-type="anime">Anime</button>
-    </div>
-    <div class="secondary-row">
-      <input id="searchInput" placeholder="Search titles…" autocomplete="off">
-      <select id="statusFilter">
-        <option value="all">All statuses</option>
-        <option value="watching">Watching</option>
-        <option value="completed">Completed</option>
-        <option value="planned">Plan to watch</option>
-      </select>
-    </div>
-  </section>
+      <h3>Status</h3>
+      <button type="button" class="sidebar-status-btn active" data-status="all"><span class="icon">◎</span><span class="label">All</span></button>
+      <button type="button" class="sidebar-status-btn" data-status="watching"><span class="icon">▶</span><span class="label">Watching</span></button>
+      <button type="button" class="sidebar-status-btn" data-status="completed"><span class="icon">✔</span><span class="label">Completed</span></button>
+      <button type="button" class="sidebar-status-btn" data-status="planned"><span class="icon">🕒</span><span class="label">Planned</span></button>
 
-  <section class="list" id="entryList">
-    <div class="loading">loading your log…</div>
-  </section>
+      <div class="sidebar-actions">
+        <a href="{% url 'logout' %}" class="btn btn-secondary logout"><span class="icon">⎋</span><span class="label">Sign out</span></a>
+      </div>
+    </aside>
+
+    <div class="main-column">
+      <header class="topbar">
+        <div class="marquee">
+          <h1>YOUR LOG</h1>
+          <p class="tagline">every movie, show, and anime — stamped as you go</p>
+        </div>
+      </header>
+
+      <section class="stats-strip" id="statsStrip"></section>
+
+      <section class="controls">
+        <div class="secondary-row">
+          <input id="searchInput" placeholder="Search titles…" autocomplete="off">
+          <select id="statusFilter">
+            <option value="all">All statuses</option>
+            <option value="watching">Watching</option>
+            <option value="completed">Completed</option>
+            <option value="planned">Plan to watch</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="list" id="entryList">
+        <div class="loading">loading your log…</div>
+      </section>
+    </div>
+  </div>
 </div>
 
 <button class="fab" id="addBtn" aria-label="Add title">+</button>

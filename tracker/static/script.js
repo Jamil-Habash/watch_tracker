@@ -9,6 +9,7 @@
   const listEl = document.getElementById('entryList');
   const statsEl = document.getElementById('statsStrip');
   const modalOverlay = document.getElementById('modalOverlay');
+  const sidebar = document.querySelector('.sidebar');
   const form = document.getElementById('entryForm');
   const typePicker = document.getElementById('typePicker');
   const episodeRow = document.getElementById('episodeRow');
@@ -57,13 +58,21 @@
         body: JSON.stringify(payload),
       });
       if(!res.ok){
-        throw new Error('Could not save entry');
+        let message = 'Could not save entry';
+        try{
+          const data = await res.json();
+          if(data && data.error){ message = data.error; }
+        }catch(_){
+          const text = await res.text();
+          if(text){ message = text; }
+        }
+        throw new Error(message);
       }
       await loadEntries();
       closeModal();
     }catch(err){
       console.error('Save failed', err);
-      alert('The title could not be saved. Please try again.');
+      alert(`The title could not be saved. ${err.message}`);
     }
   }
 
@@ -102,6 +111,24 @@
     return {total, completed, watching, avg};
   }
 
+  function setActiveTypeButtons(type){
+    document.querySelectorAll('#typeTabs .tab, .sidebar-filter-btn').forEach(b => {
+      if(b.dataset.type){
+        b.classList.toggle('active', b.dataset.type === type);
+      }
+    });
+  }
+
+  function setActiveStatusButtons(status){
+    document.querySelectorAll('.sidebar-status-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.status === status);
+    });
+    const statusSelect = document.getElementById('statusFilter');
+    if(statusSelect){
+      statusSelect.value = status;
+    }
+  }
+
   function renderStats(){
     const s = computeStats();
     statsEl.innerHTML = `
@@ -122,6 +149,8 @@
 
   function render(){
     renderStats();
+    setActiveTypeButtons(activeType);
+    setActiveStatusButtons(activeStatus);
     const list = filteredEntries();
     if(list.length === 0){
       listEl.innerHTML = `<div class="empty-state"><strong>Nothing here yet</strong>Tap + to log the first title.</div>`;
@@ -168,17 +197,45 @@
     return d.toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
   }
 
-  document.getElementById('typeTabs').addEventListener('click', e => {
-    const btn = e.target.closest('.tab');
-    if(!btn) return;
-    document.querySelectorAll('#typeTabs .tab').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    activeType = btn.dataset.type;
-    render();
-  });
+  const typeTabs = document.getElementById('typeTabs');
+  if(typeTabs){
+    typeTabs.addEventListener('click', e => {
+      const btn = e.target.closest('.tab');
+      if(!btn) return;
+      activeType = btn.dataset.type;
+      setActiveTypeButtons(activeType);
+      render();
+    });
+  }
+
+  if(sidebar){
+    const handle = sidebar.querySelector('.sidebar-handle');
+    if(handle){
+      handle.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+      });
+    }
+
+    sidebar.addEventListener('click', e => {
+      const typeBtn = e.target.closest('.sidebar-filter-btn');
+      if(typeBtn){
+        activeType = typeBtn.dataset.type;
+        setActiveTypeButtons(activeType);
+        render();
+        return;
+      }
+      const statusBtn = e.target.closest('.sidebar-status-btn');
+      if(statusBtn){
+        activeStatus = statusBtn.dataset.status;
+        setActiveStatusButtons(activeStatus);
+        render();
+      }
+    });
+  }
 
   document.getElementById('statusFilter').addEventListener('change', e => {
     activeStatus = e.target.value;
+    setActiveStatusButtons(activeStatus);
     render();
   });
 
