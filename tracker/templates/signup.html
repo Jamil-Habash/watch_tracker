@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sign up</title>
+  <title>Sign up — Your Log</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
   {% load static %}
   <link rel="stylesheet" href="{% static 'style.css' %}">
 </head>
@@ -17,7 +20,7 @@
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
         <div class="auth-field">
           <label for="id_username">Username</label>
-          <input type="text" name="username" id="id_username" required>
+          <input type="text" name="username" id="id_username" required autofocus>
         </div>
         <div class="auth-field">
           <label for="id_password1">Password</label>
@@ -32,7 +35,7 @@
         </div>
       </form>
       {% if form.errors %}
-      <div class="auth-footer" style="color:#f5b2b2;">
+      <div class="auth-footer" style="color:#e2a3a3;border-top:none;padding-top:0;margin-top:0;">
         Please correct the highlighted errors and try again.
       </div>
       {% endif %}

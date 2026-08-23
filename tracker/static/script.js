@@ -102,6 +102,11 @@
     return {watching:'Watching', completed:'Completed', planned:'Plan to watch', dropped:'Dropped'}[s] || s;
   }
 
+  function ticketNumber(id){
+    const digits = String(id).replace(/\D/g, '') || String(id);
+    return 'NO ' + digits.slice(-5).padStart(5, '0');
+  }
+
   function computeStats(){
     const total = entries.length;
     const completed = entries.filter(e => e.status === 'completed').length;
@@ -165,8 +170,10 @@
       return `
         <div class="card type-${e.type}" data-id="${e.id}">
           <div class="stub">
+            <div class="ticket-no">${ticketNumber(e.id)}</div>
             <div class="kind">${typeLabel(e.type)}</div>
             <div class="rating">${ratingDisplay}</div>
+            <div class="barcode" aria-hidden="true"></div>
           </div>
           <div class="card-body">
             <div class="card-top">
