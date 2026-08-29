@@ -9,7 +9,7 @@
   const listEl = document.getElementById('entryList');
   const statsEl = document.getElementById('statsStrip');
   const modalOverlay = document.getElementById('modalOverlay');
-  const sidebar = document.querySelector('.sidebar');
+  const topnav = document.querySelector('.topnav');
   const form = document.getElementById('entryForm');
   const typePicker = document.getElementById('typePicker');
   const episodeRow = document.getElementById('episodeRow');
@@ -215,15 +215,8 @@
     });
   }
 
-  if(sidebar){
-    const handle = sidebar.querySelector('.sidebar-handle');
-    if(handle){
-      handle.addEventListener('click', () => {
-        sidebar.classList.toggle('open');
-      });
-    }
-
-    sidebar.addEventListener('click', e => {
+  if(topnav){
+    topnav.addEventListener('click', e => {
       const typeBtn = e.target.closest('.sidebar-filter-btn');
       if(typeBtn){
         activeType = typeBtn.dataset.type;
