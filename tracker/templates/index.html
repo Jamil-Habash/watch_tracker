@@ -25,16 +25,20 @@
       </div>
 
       <h3>View</h3>
-      <button type="button" class="sidebar-filter-btn active" data-type="all"><span class="icon">≡</span><span class="label">All</span></button>
-      <button type="button" class="sidebar-filter-btn" data-type="movie"><span class="icon">🎬</span><span class="label">Movies</span></button>
-      <button type="button" class="sidebar-filter-btn" data-type="tv"><span class="icon">📺</span><span class="label">TV</span></button>
-      <button type="button" class="sidebar-filter-btn" data-type="anime"><span class="icon">🎌</span><span class="label">Anime</span></button>
+      <div class="btn-group">
+        <button type="button" class="sidebar-filter-btn active" data-type="all"><span class="icon">≡</span><span class="label">All</span></button>
+        <button type="button" class="sidebar-filter-btn" data-type="movie"><span class="icon">🎬</span><span class="label">Movies</span></button>
+        <button type="button" class="sidebar-filter-btn" data-type="tv"><span class="icon">📺</span><span class="label">TV</span></button>
+        <button type="button" class="sidebar-filter-btn" data-type="anime"><span class="icon">🎌</span><span class="label">Anime</span></button>
+      </div>
 
       <h3>Status</h3>
-      <button type="button" class="sidebar-status-btn active" data-status="all"><span class="icon">◎</span><span class="label">All</span></button>
-      <button type="button" class="sidebar-status-btn" data-status="watching"><span class="icon">▶</span><span class="label">Watching</span></button>
-      <button type="button" class="sidebar-status-btn" data-status="completed"><span class="icon">✔</span><span class="label">Completed</span></button>
-      <button type="button" class="sidebar-status-btn" data-status="planned"><span class="icon">🕒</span><span class="label">Planned</span></button>
+      <div class="btn-group">
+        <button type="button" class="sidebar-status-btn active" data-status="all"><span class="icon">◎</span><span class="label">All</span></button>
+        <button type="button" class="sidebar-status-btn" data-status="watching"><span class="icon">▶</span><span class="label">Watching</span></button>
+        <button type="button" class="sidebar-status-btn" data-status="completed"><span class="icon">✔</span><span class="label">Completed</span></button>
+        <button type="button" class="sidebar-status-btn" data-status="planned"><span class="icon">🕒</span><span class="label">Planned</span></button>
+      </div>
 
       <div class="sidebar-actions">
         <a href="{% url 'logout' %}" class="btn btn-secondary logout"><span class="icon">⎋</span><span class="label">Sign out</span></a>
