@@ -4,11 +4,14 @@ from datetime import date
 from django.contrib.auth import login, logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_http_methods
 
 from .models import ShowEntry
+from .services import get_ai_recommendations, get_fallback_recommendations
 
 
 @login_required(login_url='login')
@@ -16,8 +19,11 @@ def index(request):
     return render(request, "index.html")
 
 
-def _json_error(message, status=403):
-    return JsonResponse({"error": message}, status=status)
+def _json_error(message, status=403, extra=None):
+    payload = {"error": message}
+    if extra:
+        payload.update(extra)
+    return JsonResponse(payload, status=status)
 
 
 def _serialize_entry(entry):
@@ -68,7 +74,7 @@ def _coerce_float(value):
 def _build_entry_kwargs(data):
     payload = data or {}
     return {
-        "type": payload.get("type") or payload.get("type", "movie"),
+        "type": payload.get("type") or "movie",
         "title": (payload.get("title") or "").strip(),
         "year": _coerce_int(payload.get("year") or payload.get("productionYear")),
         "rating": _coerce_float(payload.get("rating")),
@@ -80,7 +86,43 @@ def _build_entry_kwargs(data):
     }
 
 
+def _validate_entry_payload(data):
+    """Validate payload and return list of error messages."""
+    errors = []
+    if not data:
+        return ["No data provided."]
+    title = (data.get("title") or "").strip()
+    if not title:
+        errors.append("Title is required.")
+    if len(title) > 255:
+        errors.append("Title must be 255 characters or fewer.")
+    entry_type = data.get("type") or "movie"
+    if entry_type not in dict(ShowEntry.TYPE_CHOICES):
+        errors.append(f"Invalid type: {entry_type}.")
+    status = data.get("status") or "completed"
+    if status not in dict(ShowEntry.STATUS_CHOICES):
+        errors.append(f"Invalid status: {status}.")
+    rating = data.get("rating")
+    if rating is not None and rating != "":
+        try:
+            r = float(rating)
+            if not (0 <= r <= 10):
+                errors.append("Rating must be between 0 and 10.")
+        except (TypeError, ValueError):
+            errors.append("Rating must be a number.")
+    year = data.get("year")
+    if year is not None and year != "":
+        try:
+            y = int(year)
+            if y < 0:
+                errors.append("Year cannot be negative.")
+        except (TypeError, ValueError):
+            errors.append("Year must be a number.")
+    return errors
+
+
 @csrf_exempt
+@require_http_methods(["GET", "POST"])
 def entries_api(request):
     if not request.user.is_authenticated:
         return _json_error("Authentication required", status=401)
@@ -90,17 +132,28 @@ def entries_api(request):
         return JsonResponse([_serialize_entry(entry) for entry in entries], safe=False)
 
     if request.method == "POST":
-        payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        try:
+            payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return _json_error("Invalid JSON in request body.", status=400)
+
+        validation_errors = _validate_entry_payload(payload)
+        if validation_errors:
+            return _json_error("Validation failed", status=400, extra={"details": validation_errors})
+
         try:
             entry = ShowEntry.objects.create(user=request.user, **_build_entry_kwargs(payload))
             return JsonResponse(_serialize_entry(entry), status=201)
+        except ValidationError as exc:
+            return _json_error("Validation error", status=400, extra={"details": exc.message_dict})
         except Exception as exc:
             return _json_error(str(exc), status=400)
 
-    return JsonResponse({"error": "Method not allowed"}, status=405)
+    return _json_error("Method not allowed", status=405)
 
 
 @csrf_exempt
+@require_http_methods(["GET", "PUT", "DELETE"])
 def entry_detail_api(request, pk):
     if not request.user.is_authenticated:
         return _json_error("Authentication required", status=401)
@@ -111,12 +164,23 @@ def entry_detail_api(request, pk):
         return JsonResponse(_serialize_entry(entry))
 
     if request.method == "PUT":
-        payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        try:
+            payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return _json_error("Invalid JSON in request body.", status=400)
+
+        validation_errors = _validate_entry_payload(payload)
+        if validation_errors:
+            return _json_error("Validation failed", status=400, extra={"details": validation_errors})
+
         try:
             for field, value in _build_entry_kwargs(payload).items():
                 setattr(entry, field, value)
+            entry.full_clean()
             entry.save()
             return JsonResponse(_serialize_entry(entry))
+        except ValidationError as exc:
+            return _json_error("Validation error", status=400, extra={"details": exc.message_dict})
         except Exception as exc:
             return _json_error(str(exc), status=400)
 
@@ -124,7 +188,7 @@ def entry_detail_api(request, pk):
         entry.delete()
         return JsonResponse({"deleted": True})
 
-    return JsonResponse({"error": "Method not allowed"}, status=405)
+    return _json_error("Method not allowed", status=405)
 
 
 def signup_view(request):
@@ -167,3 +231,69 @@ def login_view(request):
 def logout_view(request):
     logout(request)
     return redirect('login')
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required(login_url='login')
+def chat_recommendations(request):
+    """AI-powered recommendation chat endpoint."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    try:
+        payload = json.loads(request.body.decode("utf-8")) if request.body else {}
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "Invalid JSON in request body."}, status=400)
+    
+    user_message = (payload.get("message") or "").strip()
+    if not user_message:
+        return JsonResponse({"error": "Message is required."}, status=400)
+    
+    # Get user's watch history
+    entries = list(ShowEntry.objects.filter(user=request.user).values(
+        'type', 'title', 'year', 'rating', 'date_watched', 'status'
+    ))
+    
+    # Convert date_watched to ISO format for the service
+    for e in entries:
+        if e['date_watched']:
+            e['dateWatched'] = e['date_watched'].isoformat()
+        else:
+            e['dateWatched'] = None
+    
+    # Get AI recommendations
+    result = get_ai_recommendations(user_message, entries)
+    
+    # If AI fails, fall back to trending
+    if not result.get('recommendations') and 'error' in result:
+        fallback = get_fallback_recommendations(entries)
+        result['recommendations'] = fallback
+        result['message'] = "Here are some trending titles you might like:"
+        result['fallback'] = True
+    
+    return JsonResponse(result)
+
+
+@csrf_exempt
+@require_http_methods(["GET"])
+@login_required(login_url='login')
+def search_titles(request):
+    """Search TMDB for movies/TV shows (for autocomplete/suggestions)."""
+    if not request.user.is_authenticated:
+        return JsonResponse({"error": "Authentication required"}, status=401)
+    
+    query = request.GET.get('q', '').strip()
+    if not query or len(query) < 2:
+        return JsonResponse({"results": []})
+    
+    # Import here to avoid circular import
+    from .services import search_movies, search_tv
+    
+    movie_results = search_movies(query)
+    tv_results = search_tv(query)
+    
+    all_results = movie_results + tv_results
+    all_results.sort(key=lambda x: x.get('rating') or 0, reverse=True)
+    
+    return JsonResponse({"results": all_results[:10]})

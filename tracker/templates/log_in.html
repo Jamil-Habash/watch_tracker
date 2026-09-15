@@ -6,35 +6,43 @@
   <title>Log in — Your Log</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,500;1,500&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
   {% load static %}
-  <link rel="stylesheet" href="{% static 'style.css' %}">
+  <link rel="stylesheet" href="{% static 'style.css' %}?v=20260915">
 </head>
 <body>
   <div class="auth-page">
     <div class="auth-card">
       <h1>Welcome back</h1>
       <p>Access your watch log and manage saved movies, TV, and anime.</p>
-      <form method="post" action="{% url 'login' %}">
+      <form method="post" action="{% url 'login' %}" novalidate>
         {% csrf_token %}
         {% if next %}<input type="hidden" name="next" value="{{ next }}">{% endif %}
+
+        {% if form.non_field_errors %}
+        <div class="form-error" role="alert">
+          {{ form.non_field_errors }}
+        </div>
+        {% endif %}
+
         <div class="auth-field">
           <label for="id_username">Username</label>
-          <input type="text" name="username" id="id_username" required autofocus>
+          <input type="text" name="username" id="id_username" required autofocus aria-required="true" maxlength="150">
+          {% if form.username.errors %}
+          <span class="field-error">{{ form.username.errors }}</span>
+          {% endif %}
         </div>
         <div class="auth-field">
           <label for="id_password">Password</label>
-          <input type="password" name="password" id="id_password" required>
+          <input type="password" name="password" id="id_password" required aria-required="true">
+          {% if form.password.errors %}
+          <span class="field-error">{{ form.password.errors }}</span>
+          {% endif %}
         </div>
         <div class="auth-actions">
           <button class="btn btn-primary" type="submit">Sign in</button>
         </div>
       </form>
-      {% if form.errors %}
-      <div class="auth-footer" style="color:#e2a3a3;border-top:none;padding-top:0;margin-top:0;">
-        Please check your username and password.
-      </div>
-      {% endif %}
       <div class="auth-footer">
         Don't have an account? <a href="{% url 'signup' %}">Create one</a>.
       </div>

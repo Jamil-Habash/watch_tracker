@@ -8,41 +8,42 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Fraunces:ital,wght@0,500;0,600;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet">
 {% load static %}
-<link rel="stylesheet" href="{% static 'style.css' %}?v=20260830">
-<script src="{% static 'script.js' %}?v=20260830" defer></script>
+  <link rel="stylesheet" href="{% static 'style.css' %}?v=20260915">
+  <script src="{% static 'script.js' %}?v=20260915" defer></script>
 </head>
 <body>
 <div class="app">
   <nav class="topnav">
-    <div class="topnav-inner">
+    <div class="nav-container">
       <div class="nav-brand">
-        <div class="avatar">{{ request.user.username|slice:":1"|upper }}</div>
-        <div class="profile-copy">
+        <div class="avatar" aria-hidden="true">{{ request.user.username|slice:":1"|upper }}</div>
+        <div class="profile-info">
           <div class="profile-name">{{ request.user.username }}</div>
           <div class="profile-meta">{{ request.user.email|default:'Member' }}</div>
         </div>
       </div>
 
-      <div class="nav-groups">
-        <div class="btn-group" role="group" aria-label="Filter by type">
-          <button type="button" class="sidebar-filter-btn active" data-type="all"><span class="icon">≡</span><span class="label">All</span></button>
-          <button type="button" class="sidebar-filter-btn" data-type="movie"><span class="icon">🎬</span><span class="label">Movies</span></button>
-          <button type="button" class="sidebar-filter-btn" data-type="tv"><span class="icon">📺</span><span class="label">TV</span></button>
-          <button type="button" class="sidebar-filter-btn" data-type="anime"><span class="icon">🎌</span><span class="label">Anime</span></button>
+      <div class="nav-filters">
+        <div class="nav-group" role="group" aria-label="Filter by type">
+          <button type="button" class="nav-filter-btn active" data-type="all"><span class="icon">⊚</span><span class="label">All</span></button>
+          <button type="button" class="nav-filter-btn" data-type="movie"><span class="icon">■</span><span class="label">Movies</span></button>
+          <button type="button" class="nav-filter-btn" data-type="tv"><span class="icon">◯</span><span class="label">TV</span></button>
+          <button type="button" class="nav-filter-btn" data-type="anime"><span class="icon">◊</span><span class="label">Anime</span></button>
         </div>
 
         <span class="nav-divider" aria-hidden="true"></span>
 
-        <div class="btn-group" role="group" aria-label="Filter by status">
-          <button type="button" class="sidebar-status-btn active" data-status="all"><span class="icon">◎</span><span class="label">All</span></button>
-          <button type="button" class="sidebar-status-btn" data-status="watching"><span class="icon">▶</span><span class="label">Watching</span></button>
-          <button type="button" class="sidebar-status-btn" data-status="completed"><span class="icon">✔</span><span class="label">Completed</span></button>
-          <button type="button" class="sidebar-status-btn" data-status="planned"><span class="icon">🕒</span><span class="label">Planned</span></button>
+        <div class="nav-group" role="group" aria-label="Filter by status">
+          <button type="button" class="nav-status-btn active" data-status="all"><span class="icon">◎</span><span class="label">All</span></button>
+          <button type="button" class="nav-status-btn" data-status="watching"><span class="icon">▶</span><span class="label">Watching</span></button>
+          <button type="button" class="nav-status-btn" data-status="completed"><span class="icon">✔</span><span class="label">Completed</span></button>
+          <button type="button" class="nav-status-btn" data-status="planned"><span class="icon">○</span><span class="label">Planned</span></button>
+          <button type="button" class="nav-status-btn" data-status="dropped"><span class="icon">✕</span><span class="label">Dropped</span></button>
         </div>
       </div>
 
       <div class="nav-actions">
-        <a href="{% url 'logout' %}" class="btn btn-secondary logout"><span class="label">Sign out</span></a>
+        <a href="{% url 'logout' %}" class="btn btn-ghost logout"><span class="label">Sign out</span></a>
       </div>
     </div>
   </nav>
@@ -60,21 +61,22 @@
       </div>
     </header>
 
-    <section class="stats-strip" id="statsStrip"></section>
+    <section class="stats-strip" id="statsStrip" aria-live="polite"></section>
 
     <section class="controls">
       <div class="secondary-row">
-        <input id="searchInput" placeholder="Search titles…" autocomplete="off">
-        <select id="statusFilter">
+        <input id="searchInput" placeholder="Search titles…" autocomplete="off" aria-label="Search titles">
+        <select id="statusFilter" aria-label="Filter by status">
           <option value="all">All statuses</option>
           <option value="watching">Watching</option>
           <option value="completed">Completed</option>
           <option value="planned">Plan to watch</option>
+          <option value="dropped">Dropped</option>
         </select>
       </div>
     </section>
 
-    <section class="list" id="entryList">
+    <section class="list" id="entryList" aria-live="polite">
       <div class="loading">loading your log…</div>
     </section>
   </div>
@@ -82,64 +84,73 @@
 
 <button class="fab" id="addBtn" aria-label="Add title">+</button>
 
-<div class="modal-overlay" id="modalOverlay">
-  <form class="modal" id="entryForm">
+<button class="fab fab-chat" id="chatBtn" aria-label="AI Recommendations" title="Ask for recommendations">
+  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+  </svg>
+</button>
+
+<div class="modal-overlay" id="modalOverlay" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+  <form class="modal" id="entryForm" novalidate>
     <h2 id="modalTitle">Add a title</h2>
     <input type="hidden" id="entryId">
 
+    <div id="formError" class="form-error" role="alert" style="display:none;"></div>
+
     <div class="field">
       <label>Type</label>
-      <div class="type-picker" id="typePicker">
-        <button type="button" data-v="movie" class="sel">Movie</button>
-        <button type="button" data-v="tv">TV Series</button>
-        <button type="button" data-v="anime">Anime</button>
+      <div class="type-picker" id="typePicker" role="radiogroup" aria-label="Title type">
+        <button type="button" data-v="movie" class="sel" role="radio" aria-checked="true">Movie</button>
+        <button type="button" data-v="tv" role="radio" aria-checked="false">TV Series</button>
+        <button type="button" data-v="anime" role="radio" aria-checked="false">Anime</button>
       </div>
     </div>
 
     <div class="field">
-      <label>Title</label>
-      <input type="text" id="fTitle" required placeholder="e.g. Parasite">
+      <label for="fTitle">Title</label>
+      <input type="text" id="fTitle" required placeholder="e.g. Parasite" maxlength="255">
     </div>
 
     <div class="row2">
       <div class="field">
-        <label>Year</label>
+        <label for="fYear">Year</label>
         <input type="text" id="fYear" placeholder="2019" inputmode="numeric">
       </div>
       <div class="field">
-        <label>Status</label>
+        <label for="fStatus">Status</label>
         <select id="fStatus">
           <option value="completed">Completed</option>
           <option value="watching">Watching</option>
           <option value="planned">Plan to watch</option>
+          <option value="dropped">Dropped</option>
         </select>
       </div>
     </div>
 
     <div class="row2" id="episodeRow" style="display:none;">
       <div class="field">
-        <label>Episode</label>
+        <label for="fEpCurrent">Episode</label>
         <input type="number" id="fEpCurrent" min="0" placeholder="0">
       </div>
       <div class="field">
-        <label>Total eps</label>
+        <label for="fEpTotal">Total eps</label>
         <input type="number" id="fEpTotal" min="0" placeholder="?">
       </div>
     </div>
 
     <div class="row2">
       <div class="field">
-        <label>Rating (0–10)</label>
+        <label for="fRating">Rating (0–10)</label>
         <input type="number" id="fRating" min="0" max="10" step="0.1" placeholder="—">
       </div>
       <div class="field">
-        <label>Date watched</label>
+        <label for="fDate">Date watched</label>
         <input type="date" id="fDate">
       </div>
     </div>
 
     <div class="field">
-      <label>Notes</label>
+      <label for="fNotes">Notes</label>
       <textarea id="fNotes" placeholder="Thoughts, who you watched it with, anything worth remembering…"></textarea>
     </div>
 
@@ -147,7 +158,35 @@
       <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
       <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
     </div>
-  </form>
+</form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="chatOverlay" role="dialog" aria-modal="true" aria-labelledby="chatTitle">
+  <div class="modal modal-chat" id="chatModal">
+    <header class="chat-header">
+      <h2 id="chatTitle">AI Recommendations</h2>
+      <button type="button" class="btn-icon" id="chatCloseBtn" aria-label="Close chat">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </header>
+    <div class="chat-messages" id="chatMessages" role="log" aria-live="polite"></div>
+    <form class="chat-input-form" id="chatForm">
+      <div class="chat-input-wrapper">
+        <input type="text" id="chatInput" placeholder="Ask for recommendations…" autocomplete="off" aria-label="Your message">
+        <button type="submit" class="btn-icon" id="chatSendBtn" aria-label="Send message">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="22" y1="2" x2="11" y2="13"></line>
+            <polygon points="22 2 15 22 11 13 2 9 22 2"></polygon>
+          </svg>
+        </button>
+      </div>
+      <div class="chat-suggestions" id="chatSuggestions" aria-label="Suggested prompts"></div>
+    </form>
+  </div>
 </div>
 </body>
 </html>

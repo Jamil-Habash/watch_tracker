@@ -8,4 +8,6 @@ urlpatterns = [
     path('logout/', views.logout_view, name='logout'),
     path('api/entries/', views.entries_api, name='entries_api'),
     path('api/entries/<int:pk>/', views.entry_detail_api, name='entry_detail_api'),
+    path('api/chat/', views.chat_recommendations, name='chat_recommendations'),
+    path('api/search/', views.search_titles, name='search_titles'),
 ]
