@@ -1,51 +1,61 @@
 # 🎬 Watch Tracker
 
-A Django web app for logging and organizing the movies, TV shows, and anime you watch — track status, ratings, and notes for everything in your personal watchlist.
+A Django web application for logging, organizing, and discovering the movies, TV shows, and anime you watch. Users can manage their personal watchlist, track viewing status, add ratings and notes, and get AI-powered recommendations through a Groq-powered assistant.
 
 ## Features
 
-- **User accounts** — sign up and log in to keep a private, personal log
-- **Track anything** — add movies, TV shows, or anime with a single entry type
-- **Status tracking** — mark titles as Watching, Completed, Planned, or Dropped
-- **Ratings & notes** — rate what you've watched and jot down personal notes
-- **Search & filter** — quickly find entries by title or narrow the list by status
-- **Responsive UI** — a custom-styled interface that works on desktop and mobile
+- **User accounts** — Sign up and log in to maintain a personal watchlist
+- **Track anything** — Add movies, TV shows, or anime to your collection
+- **Status tracking** — Mark titles as Watching, Completed, Planned, or Dropped
+- **Ratings & notes** — Rate titles and add personal notes
+- **Search & filter** — Quickly find entries by title or filter them by status
+- **AI recommendations** — Get personalized recommendations based on your watchlist and preferences
+- **AI chatbot** — Interact with an AI assistant for movie, TV show, and anime recommendations
+- **Responsive UI** — Custom-styled interface designed for desktop and mobile
+- **Admin panel** — Manage application data through Django's built-in admin interface
 
 ## Tech Stack
 
 - **Backend:** Django (Python)
-- **Database:** SQLite (default, easily swappable for Postgres/MySQL in production)
+- **Database:** SQLite
 - **Frontend:** HTML templates, vanilla JavaScript, custom CSS
-- **WSGI/ASGI:** Gunicorn-ready via `wsgi.py` / `asgi.py`
+- **AI:** Groq API
+- **Authentication:** Django authentication system
+- **Deployment:** Gunicorn-ready with WSGI/ASGI configuration
 
 ## Project Structure
 
-```
+```text
 watch_tracker/
-├── tracker/                  # Main Django app
+├── tracker/
 │   ├── migrations/           # Database migrations
 │   ├── static/
-│   │   ├── script.js         # Frontend interactivity
-│   │   └── style.css         # App styling
-│   ├── templates/
-│   │   ├── index.html        # Watch log dashboard
-│   │   ├── log_in.html       # Login page
-│   │   └── signup.html       # Signup page
+│   │   ├── js/               # JavaScript assets
+│   │   └── css/              # CSS assets
+│   ├── templates/             # HTML templates
+│   ├── __init__.py
 │   ├── admin.py               # Django admin configuration
 │   ├── apps.py                 # App configuration
-│   ├── models.py             # Data models
-│   ├── tests.py               # Unit tests
-│   ├── urls.py                 # App-level URL routing
-│   └── views.py                # View logic
-├── watch_tracker/            # Project configuration
-│   ├── asgi.py
-│   ├── settings.py
-│   ├── urls.py                 # Project-level URL routing
-│   └── wsgi.py
-├── build.sh                   # Build/deploy script
-├── db.sqlite3                 # Default local database
+│   ├── models.py               # Database models
+│   ├── services.py             # AI/Groq API integration
+│   ├── tests.py                # Unit tests
+│   ├── urls.py                  # App-level URL routing
+│   └── views.py                 # View logic
+│
+├── watch_tracker/
+│   ├── __init__.py
+│   ├── asgi.py                # ASGI configuration
+│   ├── settings.py            # Django settings
+│   ├── urls.py                # Project-level URL routing
+│   └── wsgi.py                # WSGI configuration
+│
+├── build.sh                   # Build/deployment script
+├── db.sqlite3                 # Local SQLite database
 ├── manage.py                  # Django management CLI
-└── requirements.txt           # Python dependencies
+├── requirements.txt           # Python dependencies
+├── .env.example                # Environment variable template
+├── .gitignore                  # Git ignore rules
+└── README.md                   # Project documentation
 ```
 
 ## Getting Started
@@ -59,14 +69,21 @@ watch_tracker/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/<your-username>/watch_tracker.git
+   git clone https://github.com/Jamil-Habash/watch_tracker.git
    cd watch_tracker
    ```
 
 2. **Create and activate a virtual environment**
    ```bash
    python -m venv venv
-   source venv/bin/activate      # On Windows: venv\Scripts\activate
+   ```
+   On Windows:
+   ```powershell
+   venv\Scripts\activate
+   ```
+   On macOS/Linux:
+   ```bash
+   source venv/bin/activate
    ```
 
 3. **Install dependencies**
@@ -74,32 +91,80 @@ watch_tracker/
    pip install -r requirements.txt
    ```
 
-4. **Apply database migrations**
+4. **Configure environment variables**
+
+   Create a `.env` file based on `.env.example` and add the required configuration:
+   ```text
+   GROQ_API_KEY=your_api_key_here
+   ```
+   **Never commit `.env` or API keys to the repository.**
+
+5. **Apply database migrations**
    ```bash
    python manage.py migrate
    ```
 
-5. **Create a superuser (optional, for admin access)**
+6. **Create a superuser (optional, for admin panel access)**
    ```bash
    python manage.py createsuperuser
    ```
 
-6. **Run the development server**
+7. **Run the development server**
    ```bash
    python manage.py runserver
    ```
 
-7. Open your browser to `http://127.0.0.1:8000/`
+8. Open your browser at:
+   ```text
+   http://127.0.0.1:8000/
+   ```
+
+## 🤖 AI Features
+
+Watch Tracker integrates the **Groq API** to provide AI-powered functionality, handled through `services.py`.
+
+The AI functionality includes:
+
+- Personalized movie recommendations
+- TV show recommendations
+- Anime recommendations
+- Recommendations based on the user's existing watchlist
+- Conversational interaction with the AI assistant
+
+The Groq API key is loaded through an environment variable and is never stored directly in the source code.
+
+## 🔐 Environment Variables
+
+Sensitive configuration is managed through environment variables.
+
+Create a `.env` file locally:
+```env
+GROQ_API_KEY=your_api_key_here
+```
+
+The `.env` file is intentionally excluded from version control. An `.env.example` file is included to show the required configuration without exposing secrets.
 
 ## Deployment
 
-The included `build.sh` script can be used to automate build steps (installing dependencies, collecting static files, and running migrations) for platform deployments such as Render or Railway.
+The included `build.sh` script can automate common deployment steps such as:
+
+- Installing dependencies
+- Collecting static files
+- Running database migrations
 
 ```bash
 ./build.sh
 ```
 
-Make sure to set `DEBUG = False` and configure `ALLOWED_HOSTS`, along with a production-grade database, in `settings.py` before deploying.
+The application is configured to support production deployment using Gunicorn and Django's WSGI/ASGI configuration.
+
+Before deploying, make sure to:
+
+- Set `DEBUG=False`
+- Configure `ALLOWED_HOSTS`
+- Configure production environment variables
+- Use an appropriate production database
+- Keep API keys and other secrets outside the repository
 
 ## Running Tests
 
@@ -109,12 +174,21 @@ python manage.py test
 
 ## Contributing
 
-Contributions are welcome. To contribute:
+Contributions are welcome.
 
 1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/your-feature`)
-3. Commit your changes (`git commit -m "Add your feature"`)
-4. Push to the branch (`git push origin feature/your-feature`)
+2. Create a feature branch
+   ```bash
+   git checkout -b feature/your-feature
+   ```
+3. Commit your changes
+   ```bash
+   git commit -m "Add your feature"
+   ```
+4. Push the branch
+   ```bash
+   git push origin feature/your-feature
+   ```
 5. Open a pull request
 
 ## License
